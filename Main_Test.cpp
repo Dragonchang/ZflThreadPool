@@ -1,6 +1,6 @@
-#include"Handler.h"
-#include"Message.h"
-#include"NThread.h"
+#include "./Handler/Handler.h"
+#include "./Handler/Message.h"
+#include "./Handler/NThread.h"
 int mCount = 1;
 /*****************
 1.线程的退出:子线程处理完消息退出,其它线程命令其退出.
