@@ -29,7 +29,7 @@ void Looper::loop() {
         message = mMessageQueue->getNextMessage();
         if (message != NULL) {
             printf("tid:%d Looper::loop message != NULL\n",(unsigned)pthread_self());
-            message->mTarget->handlerMessage(message->what);
+            message->mTarget->handlerMessage(message);
             delete message;
         } else {
             printf("tid:%d Looper::loop message == NULL\n",(unsigned)pthread_self());

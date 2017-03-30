@@ -7,6 +7,9 @@ void Message::setTarget(Handler* handler) {
 }
 
 Message* Message::obtain(int what){
-return new Message(what);
+    return new Message(what);
+}
 
+Message* Message::obtain(int what, void *obj){
+    return new Message(what, obj);
 }

@@ -10,10 +10,10 @@ Handler::~Handler(){
 void Handler::sendMessage(Message *message){
     printf("tid:%d Handler::sendMessage what =%d\n",(unsigned)pthread_self() ,message->what);
     message->setTarget(this);
-    mLooper->getMessageQueue()->enqueueMessage(message);
+    if (mLooper != NULL) mLooper->getMessageQueue()->enqueueMessage(message);
 }
 
-void Handler::handlerMessage(int what){
-    printf("tid:%d Handler::handlerMessage what =%d\n",(unsigned)pthread_self() ,what);
+void Handler::handlerMessage(Message *message){
+    printf("tid:%d Handler::handlerMessage what =%d\n",(unsigned)pthread_self() ,message->what);
     sleep(2);
 }

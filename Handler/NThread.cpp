@@ -2,6 +2,7 @@
 NThread::NThread(){
     int res = sem_init(&bin_sem,0,0);
     mLooper = new Looper();
+    running = false;
     printf("tid:%d NThread::NThread\n", (unsigned)pthread_self());
     pthread_create(&mTid,0,ThreadLoop,this);
     sem_wait(&bin_sem);
@@ -23,5 +24,7 @@ void* NThread::ThreadLoop(void* arg){
 
 void NThread::Run(){
     sem_post(&bin_sem);
+    running = true;
     getLooper()->loop();
+    running = false;
 }

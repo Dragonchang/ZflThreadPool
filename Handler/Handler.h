@@ -16,7 +16,7 @@ protected:
     Looper *mLooper;
 
 public:
-    virtual void handlerMessage(int what);
+    virtual void handlerMessage(Message* message);
     void sendMessage(Message* message);
 };
 #endif

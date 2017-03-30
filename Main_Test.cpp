@@ -1,6 +1,7 @@
 #include "./Handler/Handler.h"
 #include "./Handler/Message.h"
 #include "./Handler/NThread.h"
+#include "./ThreadPool/Task.h"
 int mCount = 1;
 /*****************
 1.线程的退出:子线程处理完消息退出,其它线程命令其退出.
@@ -20,15 +21,15 @@ class MyHandler: public Handler {
     :Handler(looper){
 
     }
-    void handlerMessage(int what) {
-        printf("tid:%d MyHandler::handlerMessage what =%d\n",(unsigned)pthread_self() ,what);
-        if(9 == what) {
+    void handlerMessage(Message *message) {
+        printf("tid:%d MyHandler::handlerMessage what =%d\n",(unsigned)pthread_self() ,message->what);
+        if(9 == message->what) {
             //可能需要创建一个对象处理某个事务同时该对象中某个逻辑需要sendmessage到该线程的消息队列中进行处理
             //怎样获取looper对象其实就是Messagequeue
             //通过TLS保存looper对象这样所有子线程所有的地方都可以获取looper对象来创建handler
             Message* message = Message::obtain(1000);
             sendMessage(message);
-        }else if (1000 == what) {
+        }else if (1000 == message->what) {
             //Looper::getForThread()->quit(true);//TLS 存儲looper對象Looper::getForThread()来创建其它的handler
         } else {
             //sleep(1);

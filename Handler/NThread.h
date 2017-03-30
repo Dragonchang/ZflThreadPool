@@ -19,5 +19,8 @@ public:
     Looper* getLooper() { return mLooper;}
     pthread_t getTid() {return mTid;}
     virtual void Run();
+    bool IsRun() {return running;}
+private:
+    bool running;
 };
 #endif
