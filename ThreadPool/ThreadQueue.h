@@ -20,6 +20,5 @@ private:
     int mSize;
     ThreadNode *mHead;
     ThreadNode *mTail;
-    ThreadStatus *ThreadCallback;
 };
 #endif
