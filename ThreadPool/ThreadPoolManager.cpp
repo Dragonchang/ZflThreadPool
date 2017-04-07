@@ -32,11 +32,34 @@ class MyHandler: public Handler {
 };
 
 ThreadPoolManager::ThreadPoolManager() {
+     mBusyQueue = new ThreadQueue();
+     mIdleQueue = new ThreadQueue();
 
+     mThread = new NThread();
+     mHandler = new MyHandler(mThread->getLooper(), this);
 }
 
 ThreadPoolManager::~ThreadPoolManager() {
-
+    if (mBusyQueue != NULL) {
+        delete mBusyQueue;
+        mBusyQueue = NULL;
+    }
+    if (mIdleQueue != NULL) {
+        delete mIdleQueue;
+        mIdleQueue = NULL;
+    }
+    if (mHandler != NULL) {
+        delete mHandler;
+        mHandler = NULL;
+    }
+    if (mThread != NULL) {
+        if (mThread->IsRun()) {
+            if (mThread->getLooper() != NULL)
+                mThread->getLooper()->quit(true);
+        }
+        delete mThread;
+        mThread = NULL;
+    }
 }
 
 //create thread node for busy and idle queue
@@ -70,7 +93,12 @@ void ThreadPoolManager::RunEnd(ThreadNode *tn) {
 }
 
 void ThreadPoolManager::handlerStartThreadPool() {
-
+    int defaultPoolSize = 20;
+    for (int i = 0; i < defaultPoolSize; i++) {
+        if (mIdleQueue != NULL) {
+            mIdleQueue->addThreadNodeToHead(new ThreadNode(this));
+        }
+    }
 }
 
 void ThreadPoolManager::handlerBeginExecuteTask(Task *task) {
