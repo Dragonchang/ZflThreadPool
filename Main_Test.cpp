@@ -5,6 +5,8 @@
 #include "./Handler/Meutex.h"
 #include "./ThreadPool/Task.h"
 #include "./ThreadPool/ThreadPoolManager.h"
+#include <sys/time.h>
+#include <unistd.h>
 int mCount = 10;
 /*****************
 1.线程的退出:子线程处理完消息退出,其它线程命令其退出.
@@ -39,7 +41,7 @@ class TestHandler: public Handler {
         }
     }
 };
-
+//該示例是looper在子线程中的使用case
 void TestHandlerAndLoop() {
     void **tret;
     NThread thread;
@@ -58,20 +60,27 @@ Condition mCondition;
 Task *testTask;
 int taskNum = 100;
 int taskindex = 0;
+long t(){
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return tv.tv_sec*1000 + tv.tv_usec/100;
+}
 class TestTask: public Task {
     public:
     void run() {
-        sleep(1);
+        sleep(10);
         taskindex = taskindex + 1;
-        printf("this (%d) testtask run function;\n",taskindex);
+        printf("this (%d) testtask run function; %ld\n",taskindex,t());
         if (taskindex == taskNum) {
-            printf("all the task run end\n");
+            printf("all the task run end %ld\n",t());
             //mCondition.broadcast();
         }
     }
 };
 
+// 测试thread pool
 void TestThreadPool() {
+    printf("main thread begin %ld\n",t());
     Mutex::Autolock _l(mLock);
     ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
     threadpoolmanager->handlerStartThreadPool();
@@ -79,15 +88,15 @@ void TestThreadPool() {
     for (int i = 0; i<taskNum; i++) {
 	threadpoolmanager->beginExecuteTask(testTask);
     }
-    printf("main thread begin waite\n");
+    printf("main thread begin waite %ld\n",t());
     mCondition.wait(mLock);
-    printf("main thread end waite\n");
+    printf("main thread end waite %ld\n",t());
     delete threadpoolmanager;
     delete testTask;
-    printf("main thread end\n");
+    printf("main thread end %ld\n",t());
 }
 
-//該示例是looper在子线程中的使用case
+
 int main() {
     //TestHandlerAndLoop();
     TestThreadPool();
