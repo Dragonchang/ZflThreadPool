@@ -3,7 +3,6 @@
 class Task {
 public:
     Task(){}
-    virtual ~Task();
 
 public:
     virtual void run() = 0;

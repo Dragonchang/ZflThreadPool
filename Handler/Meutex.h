@@ -22,11 +22,11 @@ public:
                 ~Mutex();
 
     // lock or unlock the mutex
-    status_t    lock();
+    int    lock();
     void        unlock();
 
     // lock if possible; returns 0 on success, error otherwise
-    status_t    tryLock();
+    int    tryLock();
 
     // lock the mutex, but don't wait longer than timeoutMilliseconds.
     // Returns 0 on success, TIMED_OUT for failure due to timeout expiration.
@@ -34,7 +34,7 @@ public:
     // OSX doesn't have pthread_mutex_timedlock() or equivalent. To keep
     // capabilities consistent across host OSes, this method is only available
     // when building Android binaries.
-    status_t    timedLock(long timeoutMilliseconds);
+    int    timedLock(long timeoutMilliseconds);
 
     // Manages the mutex automatically. It'll be locked when Autolock is
     // constructed and released when Autolock goes out of scope.
@@ -79,16 +79,16 @@ inline Mutex::Mutex(int type, __attribute__((unused)) const char* name) {
 inline Mutex::~Mutex() {
     pthread_mutex_destroy(&mMutex);
 }
-inline status_t Mutex::lock() {
+inline int Mutex::lock() {
     return -pthread_mutex_lock(&mMutex);
 }
 inline void Mutex::unlock() {
     pthread_mutex_unlock(&mMutex);
 }
-inline status_t Mutex::tryLock() {
+inline int Mutex::tryLock() {
     return -pthread_mutex_trylock(&mMutex);
 }
-inline status_t Mutex::timedLock(long timeoutNs) {
+inline int Mutex::timedLock(long timeoutNs) {
     const struct timespec ts = {
         /* .tv_sec = */ static_cast<time_t>(timeoutNs / 1000000000),
         /* .tv_nsec = */ static_cast<long>(timeoutNs % 1000000000),

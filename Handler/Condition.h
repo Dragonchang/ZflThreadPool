@@ -6,7 +6,7 @@
 #include <time.h>
 
 # include <pthread.h>
-#include "Mutex.h"
+#include "Meutex.h"
 class Condition {
 public:
     enum {
@@ -23,9 +23,9 @@ public:
     Condition(int type);
     ~Condition();
     // Wait on the condition variable.  Lock the mutex before calling.
-    status_t wait(Mutex& mutex);
+    int wait(Mutex& mutex);
     // same with relative timeout
-    status_t waitRelative(Mutex& mutex, nsecs_t reltime);
+    int waitRelative(Mutex& mutex, long reltime);
     // Signal the condition variable, allowing exactly one thread to continue.
     void signal();
     // Signal the condition variable, allowing one or all threads to continue.
@@ -62,10 +62,10 @@ inline Condition::Condition(int type) {
 inline Condition::~Condition() {
     pthread_cond_destroy(&mCond);
 }
-inline status_t Condition::wait(Mutex& mutex) {
+inline int Condition::wait(Mutex& mutex) {
     return -pthread_cond_wait(&mCond, &mutex.mMutex);
 }
-inline status_t Condition::waitRelative(Mutex& mutex, long reltime) {
+inline int Condition::waitRelative(Mutex& mutex, long reltime) {
 #if defined(HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE)
     struct timespec ts;
     ts.tv_sec  = reltime/1000000000;

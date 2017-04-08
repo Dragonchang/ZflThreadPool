@@ -1,9 +1,10 @@
 #include"NThread.h"
+#define DEBUG 0
 NThread::NThread(){
     int res = sem_init(&bin_sem,0,0);
     mLooper = new Looper();
     running = false;
-    printf("tid:%d NThread::NThread\n", (unsigned)pthread_self());
+    if (DEBUG) printf("tid:%d NThread::NThread\n", (unsigned)pthread_self());
     pthread_create(&mTid,0,ThreadLoop,this);
     sem_wait(&bin_sem);
 }
@@ -17,7 +18,7 @@ NThread::~NThread(){
 }
 
 void* NThread::ThreadLoop(void* arg){
-    printf("tid:%d NThread::ThreadLoop\n", (unsigned)pthread_self());
+    if (DEBUG) printf("tid:%d NThread::ThreadLoop\n", (unsigned)pthread_self());
     NThread *ptr = (NThread *)arg;
     ptr->Run();
 }

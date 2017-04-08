@@ -4,10 +4,10 @@
 #include "ThreadStatus.h"
 #include "../Handler/NThread.h"
 #include "../Handler/Handler.h"
-class MyHandler: public Handler {
+class MThreadPoolHandler: public Handler {
 
     public:
-    MyHandler(Looper* looper, ThreadPoolManager *threadPoolManager)
+    MThreadPoolHandler(Looper* looper, ThreadPoolManager *threadPoolManager)
     :Handler(looper){
         mThreadPoolManager = threadPoolManager;
     }
@@ -36,7 +36,7 @@ ThreadPoolManager::ThreadPoolManager() {
      mIdleQueue = new ThreadQueue();
 
      mThread = new NThread();
-     mHandler = new MyHandler(mThread->getLooper(), this);
+     mHandler = new MThreadPoolHandler(mThread->getLooper(), this);
 }
 
 ThreadPoolManager::~ThreadPoolManager() {
@@ -93,7 +93,7 @@ void ThreadPoolManager::RunEnd(ThreadNode *tn) {
 }
 
 void ThreadPoolManager::handlerStartThreadPool() {
-    int defaultPoolSize = 20;
+    int defaultPoolSize = 300;
     for (int i = 0; i < defaultPoolSize; i++) {
         if (mIdleQueue != NULL) {
             mIdleQueue->addThreadNodeToHead(new ThreadNode(this));
