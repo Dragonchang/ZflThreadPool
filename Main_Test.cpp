@@ -67,7 +67,7 @@ long t(){
 class TestTask: public Task {
     public:
     void run() {
-        sleep(5);
+        sleep(1);
         taskindex = taskindex + 1;
         printf("this (%d) testtask run function; %ld\n",taskindex,t());
         if (taskindex == taskNum) {
@@ -137,7 +137,7 @@ void TestThreadPool_runtask2() {
     threadpoolmanager->handlerStartThreadPool();
     Task *testTask = new TestTask();
     taskindex = 0;
-    taskNum = 20;
+    taskNum = 200;
     for (int i = 0; i<taskNum; i++) {
 	threadpoolmanager->beginExecuteTask(testTask);
     }
@@ -150,6 +150,54 @@ void TestThreadPool_runtask2() {
     printf("TestThreadPool_runtask2 delete threadpoolmanager %ld\n",t());
 }
 
+//task number bigger than threadpool queue size
+//reuse the idle tn
+void TestThreadPool_runtask3() {
+    printf("TestThreadPool_runtask3_begin %ld\n",t());
+    Mutex::Autolock _l(mLock);
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
+    threadpoolmanager->handlerStartThreadPool();
+    Task *testTask = new TestTask();
+    taskindex = 0;
+    taskNum = 50;
+    for (int i = 0; i<taskNum; i++) {
+        sleep(2);
+	threadpoolmanager->beginExecuteTask(testTask);
+    }
+    printf("TestThreadPool_runtask3 begin waite %ld\n",t());
+    mCondition.wait(mLock);
+    printf("TestThreadPool_runtask3 end waite %ld\n",t());
+    delete testTask;
+    printf("TestThreadPool_runtask3 delete testTask %ld\n",t());
+    delete threadpoolmanager;
+    printf("TestThreadPool_runtask3 delete threadpoolmanager %ld\n",t());
+}
+
+//task number bigger than threadpool queue size
+//reuse the idle tn
+void TestThreadPool_runtask4() {
+    printf("TestThreadPool_runtask4_begin %ld\n",t());
+    Mutex::Autolock _l(mLock);
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
+    threadpoolmanager->handlerStartThreadPool();
+    Task *testTask = new TestTask();
+    taskindex = 0;
+    taskNum = 50;
+    for (int i = 0; i<taskNum; i++) {
+        if (i%3 == 0) {
+            sleep(2);
+        }
+	threadpoolmanager->beginExecuteTask(testTask);
+    }
+    printf("TestThreadPool_runtask4 begin waite %ld\n",t());
+    mCondition.wait(mLock);
+    printf("TestThreadPool_runtask4 end waite %ld\n",t());
+    delete testTask;
+    printf("TestThreadPool_runtask4 delete testTask %ld\n",t());
+    delete threadpoolmanager;
+    printf("TestThreadPool_runtask4 delete threadpoolmanager %ld\n",t());
+}
+
 int main() {
     TestThreadPool_start1();
     TestThreadPool_start2();
@@ -157,6 +205,7 @@ int main() {
     TestThreadPool_start4();
     TestThreadPool_runtask1();
     TestThreadPool_runtask2();
-
+    TestThreadPool_runtask3();
+    TestThreadPool_runtask4();
     return 0;
 }
