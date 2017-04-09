@@ -67,12 +67,12 @@ long t(){
 class TestTask: public Task {
     public:
     void run() {
-        sleep(10);
+        sleep(5);
         taskindex = taskindex + 1;
         printf("this (%d) testtask run function; %ld\n",taskindex,t());
         if (taskindex == taskNum) {
             printf("all the task run end %ld\n",t());
-            //mCondition.broadcast();
+            mCondition.broadcast();
         }
     }
 };
@@ -80,54 +80,83 @@ class TestTask: public Task {
 // 测试thread pool
 void TestThreadPool_start1() {
     printf("TestThreadPool_start1-begin %ld\n",t());
-    ThreadPoolManager threadpoolmanager;
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
+    delete threadpoolmanager;
     printf("TestThreadPool_start1-end %ld\n",t());
 }
 
 void TestThreadPool_start2() {
     printf("TestThreadPool_start2-begin %ld\n",t());
-    ThreadPoolManager threadpoolmanager(100);
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager(100);
+    delete threadpoolmanager;
     printf("TestThreadPool_start2-end %ld\n",t());
 }
 
 void TestThreadPool_start3() {
     printf("TestThreadPool_start3-begin %ld\n",t());
-    ThreadPoolManager threadpoolmanager;
-    threadpoolmanager.handlerStartThreadPool();
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
+    threadpoolmanager->handlerStartThreadPool();
+    delete threadpoolmanager;
     printf("TestThreadPool_start3-end %ld\n",t());
 }
 
 void TestThreadPool_start4() {
     printf("TestThreadPool_start4-begin %ld\n",t());
-    ThreadPoolManager threadpoolmanager(100);
-    threadpoolmanager.handlerStartThreadPool();
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager(100);
+    threadpoolmanager->handlerStartThreadPool();
+    delete threadpoolmanager;
     printf("TestThreadPool_start4-end %ld\n",t());
 }
 
-//task number little than threadpool queue size
+//task number littler than threadpool queue size
 void TestThreadPool_runtask1() {
     printf("TestThreadPool_runtask1_begin %ld\n",t());
     Mutex::Autolock _l(mLock);
-    ThreadPoolManager threadpoolmanager;
-    threadpoolmanager.handlerStartThreadPool();
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
+    threadpoolmanager->handlerStartThreadPool();
     Task *testTask = new TestTask();
-    taskNum = 20;
-    for (int i = 0; i<20; i++) {
-	threadpoolmanager.beginExecuteTask(testTask);
+    taskindex = 0;
+    taskNum = 5;
+    for (int i = 0; i<taskNum; i++) {
+	threadpoolmanager->beginExecuteTask(testTask);
     }
     printf("TestThreadPool_runtask1 begin waite %ld\n",t());
     mCondition.wait(mLock);
     printf("TestThreadPool_runtask1 end waite %ld\n",t());
     delete testTask;
+    delete threadpoolmanager;
     printf("TestThreadPool_runtask1 end %ld\n",t());
 }
 
+
+//task number bigger than threadpool queue size
+void TestThreadPool_runtask2() {
+    printf("TestThreadPool_runtask2_begin %ld\n",t());
+    Mutex::Autolock _l(mLock);
+    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
+    threadpoolmanager->handlerStartThreadPool();
+    Task *testTask = new TestTask();
+    taskindex = 0;
+    taskNum = 20;
+    for (int i = 0; i<taskNum; i++) {
+	threadpoolmanager->beginExecuteTask(testTask);
+    }
+    printf("TestThreadPool_runtask2 begin waite %ld\n",t());
+    mCondition.wait(mLock);
+    printf("TestThreadPool_runtask2 end waite %ld\n",t());
+    delete testTask;
+    printf("TestThreadPool_runtask2 delete testTask %ld\n",t());
+    delete threadpoolmanager;
+    printf("TestThreadPool_runtask2 delete threadpoolmanager %ld\n",t());
+}
 
 int main() {
     TestThreadPool_start1();
     TestThreadPool_start2();
     TestThreadPool_start3();
     TestThreadPool_start4();
+    TestThreadPool_runtask1();
+    TestThreadPool_runtask2();
 
     return 0;
 }

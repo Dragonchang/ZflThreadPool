@@ -4,7 +4,7 @@
 #include "ThreadStatus.h"
 #include "../Handler/NThread.h"
 #include "../Handler/Handler.h"
-#define DEFAULTSIZE  50;
+#define DEFAULTSIZE  10;
 class MThreadPoolHandler: public Handler {
 
     public:
@@ -36,7 +36,6 @@ ThreadPoolManager::ThreadPoolManager() {
     mDefaultSize = DEFAULTSIZE;
     mBusyQueue = new ThreadQueue();
     mIdleQueue = new ThreadQueue();
-
     mThread = new NThread();
     mHandler = new MThreadPoolHandler(mThread->getLooper(), this);
 }
@@ -45,12 +44,22 @@ ThreadPoolManager::ThreadPoolManager(int size) {
     mDefaultSize = size;
     mBusyQueue = new ThreadQueue();
     mIdleQueue = new ThreadQueue();
-
     mThread = new NThread();
     mHandler = new MThreadPoolHandler(mThread->getLooper(), this);
 }
 
 ThreadPoolManager::~ThreadPoolManager() {
+    if (mHandler != NULL) {
+        delete mHandler;
+        mHandler = NULL;
+    }
+    //must stop the poolmanger thread before delete tn Queue
+    //destruct function maybe call by user thread
+    if (mThread != NULL) {
+        delete mThread;
+        mThread = NULL;
+    }
+
     if (mBusyQueue != NULL) {
         delete mBusyQueue;
         mBusyQueue = NULL;
@@ -59,14 +68,7 @@ ThreadPoolManager::~ThreadPoolManager() {
         delete mIdleQueue;
         mIdleQueue = NULL;
     }
-    if (mHandler != NULL) {
-        delete mHandler;
-        mHandler = NULL;
-    }
-    if (mThread != NULL) {
-        delete mThread;
-        mThread = NULL;
-    }
+
 }
 
 //create thread node for busy and idle queue

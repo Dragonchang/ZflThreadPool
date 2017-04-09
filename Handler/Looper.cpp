@@ -2,14 +2,15 @@
 #define DEBUG 0
 static pthread_key_t gTLSKey = 0;
 Looper::Looper() {
+    mQuit = false;
     mMessageQueue = new MessageQueue();
     int result = pthread_key_create(& gTLSKey, NULL);
 }
 
 Looper::~Looper() {
-   if (mMessageQueue != 0) {
+   if (mMessageQueue != NULL) {
       delete mMessageQueue;
-      mMessageQueue = 0;
+      mMessageQueue = NULL;
    }
 }
 
@@ -32,13 +33,28 @@ void Looper::loop() {
             message->mTarget->handlerMessage(message);
             delete message;
         } else {
-            printf("tid:%d Looper::loop message == NULL exit!!!!\n",(unsigned)pthread_self());
+            if(DEBUG) printf("thread tid:%d exit!!!!\n",(unsigned)pthread_self());
             break;
         }
     }
 }
 
+void Looper::enqueueMessage(Message* message) {
+    if (mQuit == true) {
+        if(DEBUG) printf("Looper is quit stop enqueue message\n");
+        return;
+    }
+    if (mMessageQueue) {
+        mMessageQueue->enqueueMessage(message);
+    }
+}
+
 void Looper::quit(bool removeAllMessage) {
+    if (mQuit == true) {
+        if(DEBUG) printf("Looper is quit stop quit\n");
+        return;
+    }
+    mQuit = true;
     if (removeAllMessage) {
         mMessageQueue->removeAllMessage();
     }
