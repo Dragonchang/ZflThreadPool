@@ -57,8 +57,7 @@ void TestHandlerAndLoop() {
 
 Mutex mLock;
 Condition mCondition;
-Task *testTask;
-int taskNum = 100;
+int taskNum = 0;
 int taskindex = 0;
 long t(){
     struct timeval tv;
@@ -79,26 +78,56 @@ class TestTask: public Task {
 };
 
 // 测试thread pool
-void TestThreadPool() {
-    printf("main thread begin %ld\n",t());
+void TestThreadPool_start1() {
+    printf("TestThreadPool_start1-begin %ld\n",t());
+    ThreadPoolManager threadpoolmanager;
+    printf("TestThreadPool_start1-end %ld\n",t());
+}
+
+void TestThreadPool_start2() {
+    printf("TestThreadPool_start2-begin %ld\n",t());
+    ThreadPoolManager threadpoolmanager(100);
+    printf("TestThreadPool_start2-end %ld\n",t());
+}
+
+void TestThreadPool_start3() {
+    printf("TestThreadPool_start3-begin %ld\n",t());
+    ThreadPoolManager threadpoolmanager;
+    threadpoolmanager.handlerStartThreadPool();
+    printf("TestThreadPool_start3-end %ld\n",t());
+}
+
+void TestThreadPool_start4() {
+    printf("TestThreadPool_start4-begin %ld\n",t());
+    ThreadPoolManager threadpoolmanager(100);
+    threadpoolmanager.handlerStartThreadPool();
+    printf("TestThreadPool_start4-end %ld\n",t());
+}
+
+//task number little than threadpool queue size
+void TestThreadPool_runtask1() {
+    printf("TestThreadPool_runtask1_begin %ld\n",t());
     Mutex::Autolock _l(mLock);
-    ThreadPoolManager *threadpoolmanager = new ThreadPoolManager();
-    threadpoolmanager->handlerStartThreadPool();
-    testTask = new TestTask();
-    for (int i = 0; i<taskNum; i++) {
-	threadpoolmanager->beginExecuteTask(testTask);
+    ThreadPoolManager threadpoolmanager;
+    threadpoolmanager.handlerStartThreadPool();
+    Task *testTask = new TestTask();
+    taskNum = 20;
+    for (int i = 0; i<20; i++) {
+	threadpoolmanager.beginExecuteTask(testTask);
     }
-    printf("main thread begin waite %ld\n",t());
+    printf("TestThreadPool_runtask1 begin waite %ld\n",t());
     mCondition.wait(mLock);
-    printf("main thread end waite %ld\n",t());
-    delete threadpoolmanager;
+    printf("TestThreadPool_runtask1 end waite %ld\n",t());
     delete testTask;
-    printf("main thread end %ld\n",t());
+    printf("TestThreadPool_runtask1 end %ld\n",t());
 }
 
 
 int main() {
-    //TestHandlerAndLoop();
-    TestThreadPool();
+    TestThreadPool_start1();
+    TestThreadPool_start2();
+    TestThreadPool_start3();
+    //TestThreadPool_start4();
+
     return 0;
 }

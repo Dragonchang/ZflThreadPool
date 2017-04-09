@@ -4,6 +4,7 @@
 #include "ThreadStatus.h"
 #include "../Handler/NThread.h"
 #include "../Handler/Handler.h"
+#define DEFAULTSIZE  50;
 class MThreadPoolHandler: public Handler {
 
     public:
@@ -32,11 +33,21 @@ class MThreadPoolHandler: public Handler {
 };
 
 ThreadPoolManager::ThreadPoolManager() {
-     mBusyQueue = new ThreadQueue();
-     mIdleQueue = new ThreadQueue();
+    mDefaultSize = DEFAULTSIZE;
+    mBusyQueue = new ThreadQueue();
+    mIdleQueue = new ThreadQueue();
 
-     mThread = new NThread();
-     mHandler = new MThreadPoolHandler(mThread->getLooper(), this);
+    mThread = new NThread();
+    mHandler = new MThreadPoolHandler(mThread->getLooper(), this);
+}
+
+ThreadPoolManager::ThreadPoolManager(int size) {
+    mDefaultSize = size;
+    mBusyQueue = new ThreadQueue();
+    mIdleQueue = new ThreadQueue();
+
+    mThread = new NThread();
+    mHandler = new MThreadPoolHandler(mThread->getLooper(), this);
 }
 
 ThreadPoolManager::~ThreadPoolManager() {
@@ -54,8 +65,9 @@ ThreadPoolManager::~ThreadPoolManager() {
     }
     if (mThread != NULL) {
         if (mThread->IsRun()) {
-            if (mThread->getLooper() != NULL)
+            if (mThread->getLooper() != NULL) {
                 mThread->getLooper()->quit(true);
+            }
         }
         delete mThread;
         mThread = NULL;
@@ -93,8 +105,7 @@ void ThreadPoolManager::RunEnd(ThreadNode *tn) {
 }
 
 void ThreadPoolManager::handlerStartThreadPool() {
-    int defaultPoolSize = 300;
-    for (int i = 0; i < defaultPoolSize; i++) {
+    for (int i = 0; i < mDefaultSize; i++) {
         if (mIdleQueue != NULL) {
             mIdleQueue->addThreadNodeToHead(new ThreadNode(this));
         }
@@ -106,7 +117,8 @@ void ThreadPoolManager::handlerBeginExecuteTask(Task *task) {
     if (tn == NULL) {
         //FIX ME
         //Idle Queue without ThreadNode
-        return;
+        //return;
+        tn = new ThreadNode(this);
     }
     setThreadNodeBusy(tn);
     tn->RunTask(task);

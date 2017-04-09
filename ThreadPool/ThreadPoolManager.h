@@ -12,6 +12,7 @@ class Task;
 class ThreadPoolManager: public ThreadStatus {
 public:
     ThreadPoolManager();
+    ThreadPoolManager(int size);
     ~ThreadPoolManager();
 
 public:
@@ -43,6 +44,7 @@ private:
 
     NThread *mThread;
     Handler *mHandler;
+    int mDefaultSize;
 };
 #endif
 

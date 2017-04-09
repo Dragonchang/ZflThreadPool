@@ -40,8 +40,9 @@ ThreadNode::~ThreadNode() {
     }
     if (mThread != NULL) {
         if (mThread->IsRun()) {
-            if (mThread->getLooper() != NULL)
+            if (mThread->getLooper() != NULL) {
                 mThread->getLooper()->quit(true);
+            }
         }
         delete mThread;
         mThread = NULL;

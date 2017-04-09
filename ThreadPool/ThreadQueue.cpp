@@ -11,6 +11,14 @@ ThreadQueue::ThreadQueue() {
 
 ThreadQueue::~ThreadQueue() {
     deleteAllThreadNode();
+    if (mHead != NULL) {
+        delete mHead;
+        mHead = NULL;
+    }
+    if (mTail != NULL) {
+        delete mTail;
+        mTail = NULL;
+    }
 }
 
 ThreadNode *ThreadQueue::addThreadNodeToHead(ThreadNode *tn) {
@@ -67,11 +75,13 @@ ThreadNode *ThreadQueue::findThreadNode(ThreadNode *tn) {
 void ThreadQueue::deleteAllThreadNode() {
     if (!isEmpty()) {
         ThreadNode *index = NULL;
-        for(index = mHead; index != NULL; index = index->mNext) {
+        for(index = mHead->mNext; index != mTail; index = mHead->mNext) {
+            mHead->mNext = index->mNext;
+            index->mNext->mBefore = mHead;
             if (index != NULL) {
                 delete index;
-                mSize = mSize - 1;
             }
+            mSize = mSize - 1;
         }
     }
 }
