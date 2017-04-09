@@ -29,9 +29,9 @@ DEBUG:ECHO
 ECHO:
 	@echo $(SUBDIRS)
 
-#将c文件编译为o文件，并放在指定放置目标文件的目录中即OBJS_DIR
+#将cpp文件编译为o文件，并放在指定放置目标文件的目录中即OBJS_DIR
 $(OBJS):%.o:%.cpp
-	$(CC) -c $^ -o $(ROOT_DIR)/$(OBJ)/$@
+	$(CC) -c -g $^ -o $(ROOT_DIR)/$(OBJ)/$@
 
 clean:
 	rm -rf $(ROOT_DIR)/$(OBJ)/*.o

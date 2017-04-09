@@ -4,6 +4,7 @@ class NThread;
 class Handler;
 class Task;
 class ThreadStatus;
+//add tag for every node at threadPool manager
 class ThreadNode {
 public:
     ThreadNode() {};

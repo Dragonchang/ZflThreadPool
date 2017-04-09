@@ -6,5 +6,5 @@ CUR_SOURCE=${wildcard *.cpp}
 CUR_OBJS=${patsubst %.cpp, %.o, $(CUR_SOURCE)}
 all:$(CUR_OBJS)
 $(CUR_OBJS):%.o:%.cpp
-	$(CC) -c $^ -o $(ROOT_DIR)/$(OBJ)/$@
+	$(CC) -c -g $^ -o $(ROOT_DIR)/$(OBJ)/$@
 

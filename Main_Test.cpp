@@ -127,7 +127,7 @@ int main() {
     TestThreadPool_start1();
     TestThreadPool_start2();
     TestThreadPool_start3();
-    //TestThreadPool_start4();
+    TestThreadPool_start4();
 
     return 0;
 }

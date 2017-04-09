@@ -7,7 +7,6 @@ Looper::Looper() {
 }
 
 Looper::~Looper() {
-   quit(true);
    if (mMessageQueue != 0) {
       delete mMessageQueue;
       mMessageQueue = 0;
@@ -26,14 +25,14 @@ void Looper::loop() {
     Message * message;
     Looper::setForThread(this);
     for (;;) {
-        //printf("tid:%d Looper::loop \n",(unsigned)pthread_self());
+        if(DEBUG) printf("tid:%d Looper::loop \n",(unsigned)pthread_self());
         message = mMessageQueue->getNextMessage();
         if (message != NULL) {
             if(DEBUG) printf("tid:%d Looper::loop message != NULL\n",(unsigned)pthread_self());
             message->mTarget->handlerMessage(message);
             delete message;
         } else {
-            if(DEBUG) printf("tid:%d Looper::loop message == NULL\n",(unsigned)pthread_self());
+            printf("tid:%d Looper::loop message == NULL exit!!!!\n",(unsigned)pthread_self());
             break;
         }
     }

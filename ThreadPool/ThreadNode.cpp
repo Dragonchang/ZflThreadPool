@@ -39,11 +39,6 @@ ThreadNode::~ThreadNode() {
         mHandler = NULL;
     }
     if (mThread != NULL) {
-        if (mThread->IsRun()) {
-            if (mThread->getLooper() != NULL) {
-                mThread->getLooper()->quit(true);
-            }
-        }
         delete mThread;
         mThread = NULL;
     }

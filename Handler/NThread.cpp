@@ -11,6 +11,8 @@ NThread::NThread(){
 
 NThread::~NThread(){
     if(mLooper != NULL) {
+        mLooper->quit(true);
+        sem_wait(&bin_sem);
         delete mLooper;
         mLooper = NULL;
     }
@@ -28,4 +30,5 @@ void NThread::Run(){
     running = true;
     getLooper()->loop();
     running = false;
+    sem_post(&bin_sem);
 }
