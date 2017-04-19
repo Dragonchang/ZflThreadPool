@@ -33,6 +33,11 @@ ThreadNode::ThreadNode(ThreadStatus *threadCallBack) {
      mHandler  = new MyHandler(mThread->getLooper(), threadCallBack, this);
 }
 
+ThreadNode::ThreadNode() {
+     mThread = NULL;
+     mHandler  = NULL;
+}
+
 ThreadNode::~ThreadNode() {
     if (mHandler != NULL) {
         delete mHandler;

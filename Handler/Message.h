@@ -15,6 +15,7 @@ public:
     static Message* obtain(int what, void *obj);
 public:
     void setTarget(Handler* handler);
+    long when;
     int what;
     Handler *mTarget;
     Message* mNext;

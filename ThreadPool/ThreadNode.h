@@ -7,7 +7,7 @@ class ThreadStatus;
 //add tag for every node at threadPool manager
 class ThreadNode {
 public:
-    ThreadNode() {};
+    ThreadNode();
     ThreadNode(ThreadStatus *threadCallBack);
     virtual ~ThreadNode();
 

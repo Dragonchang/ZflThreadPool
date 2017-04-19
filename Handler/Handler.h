@@ -18,5 +18,6 @@ protected:
 public:
     virtual void handlerMessage(Message* message);
     void sendMessage(Message* message);
+    void sendMessageDelayed(Message* message, long delayMillis);
 };
 #endif

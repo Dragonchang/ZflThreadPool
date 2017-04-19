@@ -8,7 +8,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
-#include <errno.h> 
+#include <errno.h>
+#include "../Utils/Meutex.h"
 #define USE_PIPE
 /*
 保存消息实体,looper会在该对象上等待消息进行处理;
@@ -45,7 +46,7 @@ private:
     int mEpollFd;  //主线程等待消息时waite的fd
     void awoken();
     void buildEpollLocked();
-    pthread_mutex_t mMutex;
+    Mutex mMutex;
 
 };
 #endif

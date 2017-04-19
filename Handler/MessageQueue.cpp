@@ -7,7 +7,6 @@ MessageQueue::MessageQueue():mEpollFd(-1) {
     mHead = new Message();
     mTail = new Message();
     mHead->mNext = mTail;
-    pthread_mutex_init(&mMutex, NULL);
     buildEpollLocked();
 }
 
@@ -80,26 +79,22 @@ MessageQueue::~MessageQueue() {
     if (mEpollFd >= 0) {
         close(mEpollFd);
     }
-    pthread_mutex_destroy(&mMutex);
 }
 
 void MessageQueue::queueAtFront(Message* message) {
     if (DEBUG) printf("tid:%d MessageQueue::queueAtFront message%p\n",(unsigned)pthread_self(), message);
-    pthread_mutex_lock(&mMutex);
+    Mutex::Autolock _l(mMutex);
     message->mNext = mHead->mNext;
     mHead->mNext = message;
-    // Release lock.
-    pthread_mutex_unlock(&mMutex);
 }
 
 void MessageQueue::removeAllMessage() {
-    pthread_mutex_lock(&mMutex);
+    Mutex::Autolock _l(mMutex);
     //TODO 需要遍历链表删除message
     Message* indexMessage;
     Message* removeMessage;
     if (mHead->mNext == mTail) {
         if (DEBUG) printf("tid:%d removeAllMessage:MessageQueue is empty!\n",(unsigned)pthread_self());
-        pthread_mutex_unlock(&mMutex);
         return;
     }
     for(indexMessage = mHead->mNext; indexMessage != mTail;indexMessage = indexMessage->mNext) {
@@ -110,20 +105,17 @@ void MessageQueue::removeAllMessage() {
             break;
         }
     }
-    pthread_mutex_unlock(&mMutex);
 }
 
 Message* MessageQueue::removeAtTail() {
     if (DEBUG) printf("tid:%d MessageQueue::removeAtTail***begin! \n",(unsigned)pthread_self());
-    // Acquire lock.
-    pthread_mutex_lock(&mMutex);
+    Mutex::Autolock _l(mMutex);
     if (DEBUG) printf("tid:%d MessageQueue::removeAtTail***begin111111! \n",(unsigned)pthread_self());
     Message* indexMessage;
     Message* removeMessage;
     bool onlyOneMessage = false;
     if (mHead->mNext == mTail) {
         if (DEBUG) printf("tid:%d MessageQueue is empty!\n",(unsigned)pthread_self());
-        pthread_mutex_unlock(&mMutex);
         return NULL;
     }
     for(indexMessage = mHead->mNext; indexMessage != mTail;indexMessage = indexMessage->mNext) {
@@ -145,8 +137,6 @@ Message* MessageQueue::removeAtTail() {
         removeMessage = indexMessage->mNext;
         indexMessage->mNext = mTail;
     }
-    // Release lock.
-    pthread_mutex_unlock(&mMutex);
     if (DEBUG) printf("tid:%d MessageQueue::removeAtTail ***end!! %p\n",(unsigned)pthread_self(),removeMessage);
     return removeMessage;
 }
