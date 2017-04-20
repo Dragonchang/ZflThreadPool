@@ -8,6 +8,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 int mCount = 10;
+Mutex mLock1;
+Condition mCondition1;
 /*****************
 1.线程的退出:子线程处理完消息退出,其它线程命令其退出.
 2.looper在子线程中的使用
@@ -32,10 +34,11 @@ class TestHandler: public Handler {
             //可能需要创建一个对象处理某个事务同时该对象中某个逻辑需要sendmessage到该线程的消息队列中进行处理
             //怎样获取looper对象其实就是Messagequeue
             //通过TLS保存looper对象这样所有子线程所有的地方都可以获取looper对象来创建handler
-            //Message* message = Message::obtain(1000);
-            //sendMessage(message);
+            Message* message = Message::obtain(1000);
+            sendMessage(message);
         }else if (1000 == message->what) {
-            //Looper::getForThread()->quit(true);//TLS 存儲looper對象Looper::getForThread()来创建其它的handler
+            Looper::getForThread()->quit(true);//TLS 存儲looper對象Looper::getForThread()来创建其它的handler
+            mCondition1.broadcast();
         } else {
             //sleep(1);
         }
@@ -50,8 +53,12 @@ void TestHandlerAndLoop() {
         Message* message = Message::obtain(mCount);
         handler.sendMessage(message);
     }
-    //thread.getLooper()->quit(true);
-    pthread_join(thread.getTid(),tret);
+    mCondition1.wait(mLock1);
+
+}
+
+void testLooper() {
+    TestHandlerAndLoop();
 
 }
 
@@ -184,7 +191,7 @@ void TestThreadPool_runtask4() {
     taskindex = 0;
     taskNum = 50;
     for (int i = 0; i<taskNum; i++) {
-        if (i%3 == 0) {
+        if (i%5 == 0) {
             sleep(2);
         }
 	threadpoolmanager->beginExecuteTask(testTask);
@@ -198,7 +205,7 @@ void TestThreadPool_runtask4() {
     printf("TestThreadPool_runtask4 delete threadpoolmanager %ld\n",t());
 }
 
-int main() {
+void testThreadPool() {
     TestThreadPool_start1();
     TestThreadPool_start2();
     TestThreadPool_start3();
@@ -207,5 +214,9 @@ int main() {
     TestThreadPool_runtask2();
     TestThreadPool_runtask3();
     TestThreadPool_runtask4();
+}
+int main() {
+    testLooper();
+    testThreadPool();
     return 0;
 }

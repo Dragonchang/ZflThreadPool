@@ -1,6 +1,5 @@
 #include"Handler.h"
 #include "../Utils/Utils.h"
-#define DEBUG 0
 Handler::Handler(Looper* looper){
     mLooper = looper;
 }
@@ -10,10 +9,10 @@ Handler::~Handler(){
 }
 
 void Handler::sendMessage(Message *message){
-    if (DEBUG) printf("tid:%d Handler::sendMessage what =%d\n",(unsigned)pthread_self() ,message->what);
     if (message != NULL) {
         message->setTarget(this);
         message->when = getCurrentTime();
+        if (DEBUG) printf("tid:%d Handler::sendMessage what =%d message->when = %lld\n",(unsigned)pthread_self() ,message->what,message->when);
     } else {
         printf("Handler::sendMessage message is null\n");
         return;
@@ -26,10 +25,10 @@ void Handler::sendMessage(Message *message){
 }
 
 void Handler::sendMessageDelayed(Message* message, long delayMillis) {
-    if (DEBUG) printf("tid:%d Handler::sendMessage what =%d\n",(unsigned)pthread_self() ,message->what);
     if (message != NULL) {
         message->setTarget(this);
         message->when = getCurrentTime() + delayMillis;
+        if (DEBUG) printf("tid:%d Handler::sendMessageDelayed what =%d message->when = %lld delayMillis =%ld \n",(unsigned)pthread_self() ,message->what, message->when, delayMillis);
     } else {
         printf("Handler::sendMessage message is null\n");
         return;

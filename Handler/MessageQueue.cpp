@@ -1,12 +1,17 @@
 #include"MessageQueue.h"
-#define DEBUG 0
+#include "../Utils/Utils.h"
 static const int EPOLL_SIZE_HINT = 1024;
 // Maximum number of file descriptors for which to retrieve poll events each iteration.
 static const int EPOLL_MAX_EVENTS = 16;
 MessageQueue::MessageQueue():mEpollFd(-1) {
     mHead = new Message();
     mTail = new Message();
+    mCurrentMessage = NULL;
     mHead->mNext = mTail;
+    mHead->mBefore = mTail;
+    mTail->mNext = mHead;
+    mTail->mBefore = mHead;
+    mQueueSize = 0;
     buildEpollLocked();
 }
 
@@ -61,7 +66,7 @@ void MessageQueue::buildEpollLocked() {
 }
 
 MessageQueue::~MessageQueue() {
-   removeAllMessage();
+   removeAndDeleteAllMessage();
    if (mHead != NULL) {
       delete mHead;
       mHead = NULL;
@@ -84,61 +89,31 @@ MessageQueue::~MessageQueue() {
 void MessageQueue::queueAtFront(Message* message) {
     if (DEBUG) printf("tid:%d MessageQueue::queueAtFront message%p\n",(unsigned)pthread_self(), message);
     Mutex::Autolock _l(mMutex);
+    mHead->mNext->mBefore = message;
     message->mNext = mHead->mNext;
     mHead->mNext = message;
+    message->mBefore = mHead;
+    mCurrentMessage = message;
+    mQueueSize = mQueueSize + 1;
+    if (DEBUG) printf("tid:%d MessageQueue::queueAtFront mQueueSize = %d\n",(unsigned)pthread_self(), mQueueSize);
 }
 
-void MessageQueue::removeAllMessage() {
+void MessageQueue::removeAndDeleteAllMessage() {
     Mutex::Autolock _l(mMutex);
     //TODO 需要遍历链表删除message
     Message* indexMessage;
     Message* removeMessage;
     if (mHead->mNext == mTail) {
-        if (DEBUG) printf("tid:%d removeAllMessage:MessageQueue is empty!\n",(unsigned)pthread_self());
+        if (DEBUG) printf("tid:%d removeAndDeleteAllMessage:MessageQueue is empty!\n",(unsigned)pthread_self());
         return;
     }
-    for(indexMessage = mHead->mNext; indexMessage != mTail;indexMessage = indexMessage->mNext) {
+    for(indexMessage = mHead->mNext; indexMessage != mTail;indexMessage = mHead->mNext) {
         mHead->mNext = indexMessage->mNext;
-        delete indexMessage;
-        if (mHead->mNext == mTail) {
-            if (DEBUG) printf("tid:%d all message was deleted!\n",(unsigned)pthread_self());
-            break;
-        }
+        indexMessage->mNext->mBefore = mHead;
+        if(indexMessage != NULL) delete indexMessage;
+        mQueueSize = mQueueSize - 1;
+        if (DEBUG) printf("tid:%d removeAndDeleteAllMessage:mQueueSize =%d!\n",(unsigned)pthread_self(), mQueueSize);
     }
-}
-
-Message* MessageQueue::removeAtTail() {
-    if (DEBUG) printf("tid:%d MessageQueue::removeAtTail***begin! \n",(unsigned)pthread_self());
-    Mutex::Autolock _l(mMutex);
-    if (DEBUG) printf("tid:%d MessageQueue::removeAtTail***begin111111! \n",(unsigned)pthread_self());
-    Message* indexMessage;
-    Message* removeMessage;
-    bool onlyOneMessage = false;
-    if (mHead->mNext == mTail) {
-        if (DEBUG) printf("tid:%d MessageQueue is empty!\n",(unsigned)pthread_self());
-        return NULL;
-    }
-    for(indexMessage = mHead->mNext; indexMessage != mTail;indexMessage = indexMessage->mNext) {
-       if (indexMessage->mNext == mTail) {
-           onlyOneMessage = true;
-           if (DEBUG) printf("tid:%d only one message at MessageQueue\n",(unsigned)pthread_self());
-           break;
-       }
-       if(indexMessage->mNext->mNext == mTail) {
-           if (DEBUG) printf("tid:%d find the last second message at MessageQueue\n",(unsigned)pthread_self());
-           break;
-       }
-       //printf("tid:%d MessageQueue::removeAtTail***111111111! indexMessage%p\n",(unsigned)pthread_self(), indexMessage);
-    }
-    if (onlyOneMessage) {
-        removeMessage = indexMessage;
-        mHead->mNext = mTail;
-    } else {
-        removeMessage = indexMessage->mNext;
-        indexMessage->mNext = mTail;
-    }
-    if (DEBUG) printf("tid:%d MessageQueue::removeAtTail ***end!! %p\n",(unsigned)pthread_self(),removeMessage);
-    return removeMessage;
 }
 
 int MessageQueue::pollOnce(int timeoutMillis) {
@@ -232,14 +207,73 @@ void MessageQueue::wake() {
 }
 
 void MessageQueue::enqueueMessage(Message* message){
-    if (DEBUG) printf("tid:%d MessageQueue::enqueueMessage! message%p\n",(unsigned)pthread_self(), message);
+    if (DEBUG) printf("tid:%d MessageQueue::enqueueMessage! message = %p\n",(unsigned)pthread_self(), message);
     queueAtFront(message);
     wake();
 }
 
+Message* MessageQueue::getMessage(long long currentTime) {
+    long tempDelayTime = 0;
+    Message* indexMessage = NULL;
+    if(isEmpty()) {
+        if (DEBUG) printf("ERROR tid:%d MessageQueue::getMessage isEmpty mQueueSize =%d \n",(unsigned)pthread_self(), mQueueSize);
+        return NULL;
+    }
+    Message* tempMessage = mTail->mBefore;
+    long minDelayTime = tempMessage->when - currentTime;
+    for(indexMessage = tempMessage; indexMessage != mHead;indexMessage = indexMessage->mBefore) {
+        tempDelayTime = indexMessage->when - currentTime;
+        if (tempDelayTime < minDelayTime) {
+            minDelayTime = tempDelayTime;
+            tempMessage = indexMessage;
+        }
+    }
+    return tempMessage;
+}
+
+void MessageQueue::removeMessage(Message* message) {
+    Message* indexMessage;
+    for(indexMessage = mHead->mNext; indexMessage != mTail;indexMessage = indexMessage->mNext) {
+       if (indexMessage == message) {
+           if (DEBUG) printf("tid:%d MessageQueue::removeMessage find the message = %p and remove it!\n",(unsigned)pthread_self(), message);
+           indexMessage->mBefore->mNext = indexMessage->mNext;
+           indexMessage->mNext->mBefore = indexMessage->mBefore;
+           mQueueSize = mQueueSize - 1;
+           if (DEBUG) printf("tid:%d MessageQueue::removeMessage mQueueSize =%d!\n",(unsigned)pthread_self(), mQueueSize);
+           break;
+       }
+    }
+}
+
+
 Message* MessageQueue::getNextMessage(){
-    pollOnce(-1);
-    return removeAtTail(); //如果MessageQueue为空被唤醒说明该线程要退出loop
+    int nextPollTimeoutMillis = -1;
+    for (;;) {
+        pollOnce(nextPollTimeoutMillis);
+        {
+            Mutex::Autolock _l(mMutex);
+            Message* message = NULL;
+            long long currentTime = getCurrentTime();
+            if (!isEmpty()) {
+                message = getMessage(currentTime);
+                if (message != NULL) {
+                    if (message->when <= currentTime) {
+                        removeMessage(message);
+                        return message;
+                    } else {
+                        nextPollTimeoutMillis = message->when - currentTime;
+                        continue;
+                    }
+                } else {
+                    if (DEBUG) printf("ERROR tid:%d MessageQueue::getNextMessage isEmpty thread exit!\n",(unsigned)pthread_self());
+                    return NULL;
+                }
+            } else {
+                if (DEBUG) printf("tid:%d MessageQueue::getNextMessage isEmpty thread exit!\n",(unsigned)pthread_self());
+                return NULL;
+            }
+        }
+    }
 }
 
 

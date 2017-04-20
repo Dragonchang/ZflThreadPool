@@ -26,17 +26,24 @@ public:
     MessageQueue();
     virtual ~MessageQueue();
     void queueAtFront(Message* message);
-    Message* removeAtTail();
-    void removeAllMessage();
+    void removeAndDeleteAllMessage();
 
+
+    bool isEmpty() {return mQueueSize == 0;}
     int pollOnce(int timeoutMillis); //主线程在messagequeue中等待消息事件时的睡眠函数
     void wake(); //消息发送到messageueue的wake函数
     void enqueueMessage(Message* message);
     Message *getNextMessage();
 
 private:
+    Message* getMessage(long long currentTime);
+    void removeMessage(Message* message);
+
+private:
     Message* mHead;
     Message* mTail;
+    Message* mCurrentMessage;
+    int mQueueSize;
 #ifdef USE_PIPE
     int mWakeReadPipeFd;  // immutable
     int mWakeWritePipeFd; // immutable

@@ -1,5 +1,5 @@
 #include "Looper.h"
-#define DEBUG 0
+#include "../Utils/Utils.h"
 static pthread_key_t gTLSKey = 0;
 Looper::Looper() {
     mQuit = false;
@@ -56,7 +56,7 @@ void Looper::quit(bool removeAllMessage) {
     }
     mQuit = true;
     if (removeAllMessage) {
-        mMessageQueue->removeAllMessage();
+        mMessageQueue->removeAndDeleteAllMessage();
     }
     mMessageQueue->wake();
 }

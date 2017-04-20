@@ -3,11 +3,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <string>
-long getCurrentTime(){
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return tv.tv_sec*1000 + tv.tv_usec/100;
-}
+#define DEBUG 0
+extern long long getCurrentTime();
 
 
 #endif
