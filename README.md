@@ -12,7 +12,7 @@ messagequeue 大于0:
        
      3.返回tempmessage
      
-   getmessgae()之后判断delaytime<= 0,则直接remove进行处理,否则算出timeout重新进入poll_waite    
+   getmessgae()之后判断message的delaytime<= 0,如果是则直接remove message进行处理,否则算出timeout重新进入poll_waite    
    
 
 messagequeue 小于等于0:
