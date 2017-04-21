@@ -21,6 +21,10 @@ messagequeue 小于等于0:
 
 
 
+
+
+
+
 1.messageQueue 加一个quit标志
 
 2.looper在第一次进入poll_wait或者处理完message进入poll_wait 设置timeout = 0 去检查是否有消息
