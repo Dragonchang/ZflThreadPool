@@ -13,6 +13,7 @@ MessageQueue::MessageQueue():mEpollFd(-1) {
     mTail->mBefore = mHead;
     mQueueSize = 0;
     buildEpollLocked();
+    mQuit = false;
 }
 
 void MessageQueue::buildEpollLocked() {
@@ -134,14 +135,14 @@ int MessageQueue::pollOnce(int timeoutMillis) {
 	    if (errno == EINTR) {
 	        return result;
 	    }
-            if (DEBUG) printf("tid:%d MessageQueue::pollOnce eventCount < 0.\n",(unsigned)pthread_self());
+            if (DEBUG) printf("ERROR tid:%d MessageQueue::pollOnce Poll failed with an unexpected error.\n",(unsigned)pthread_self());
 	    result = -2;
 	    return result;
         }
 
         // Check for poll timeout.
         if (eventCount == 0) {
-            if (DEBUG) printf("tid:%d MessageQueue::pollOnce eventCount == 0.\n",(unsigned)pthread_self());
+            if (DEBUG) printf("tid:%d MessageQueue::pollOnce timeout.\n",(unsigned)pthread_self());
 	    result = -3;
 	    return result;
         }
@@ -247,8 +248,9 @@ void MessageQueue::removeMessage(Message* message) {
 
 
 Message* MessageQueue::getNextMessage(){
-    int nextPollTimeoutMillis = -1;
+    long nextPollTimeoutMillis = 0;
     for (;;) {
+        if (DEBUG) printf("tid:%d MessageQueue::getNextMessage nextPollTimeoutMillis = %ld\n",(unsigned)pthread_self(), nextPollTimeoutMillis);
         pollOnce(nextPollTimeoutMillis);
         {
             Mutex::Autolock _l(mMutex);
@@ -262,6 +264,7 @@ Message* MessageQueue::getNextMessage(){
                         return message;
                     } else {
                         nextPollTimeoutMillis = message->when - currentTime;
+                        if (DEBUG) printf("tid:%d get a delay Message delay time = %ld\n",(unsigned)pthread_self(), nextPollTimeoutMillis);
                         continue;
                     }
                 } else {
@@ -269,8 +272,14 @@ Message* MessageQueue::getNextMessage(){
                     return NULL;
                 }
             } else {
-                if (DEBUG) printf("tid:%d MessageQueue::getNextMessage isEmpty thread exit!\n",(unsigned)pthread_self());
-                return NULL;
+                if (DEBUG) printf("tid:%d MessageQueue::getNextMessage isEmpty!\n",(unsigned)pthread_self());
+                if (mQuit) {
+                    if (DEBUG) printf("tid:%d MessageQueue::getNextMessage isEmpty thread exit!\n",(unsigned)pthread_self());
+                    return NULL;
+                } else {
+                    if (DEBUG) printf("tid:%d MessageQueue::getNextMessage isEmpty and enter poll_wait new message!\n",(unsigned)pthread_self());
+                    nextPollTimeoutMillis = -1;
+                }
             }
         }
     }

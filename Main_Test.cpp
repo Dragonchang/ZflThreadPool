@@ -10,6 +10,11 @@
 int mCount = 10;
 Mutex mLock1;
 Condition mCondition1;
+long t(){
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return tv.tv_sec*1000 + tv.tv_usec/100;
+}
 /*****************
 1.线程的退出:子线程处理完消息退出,其它线程命令其退出.
 2.looper在子线程中的使用
@@ -35,9 +40,10 @@ class TestHandler: public Handler {
             //怎样获取looper对象其实就是Messagequeue
             //通过TLS保存looper对象这样所有子线程所有的地方都可以获取looper对象来创建handler
             Message* message = Message::obtain(1000);
-            sendMessage(message);
+            sendMessageDelayed(message,10000);
         }else if (1000 == message->what) {
             Looper::getForThread()->quit(true);//TLS 存儲looper對象Looper::getForThread()来创建其它的handler
+            printf("testHandler::handlerMessag broadcast main thread %ld\n",t());
             mCondition1.broadcast();
         } else {
             //sleep(1);
@@ -45,20 +51,36 @@ class TestHandler: public Handler {
     }
 };
 //該示例是looper在子线程中的使用case
-void TestHandlerAndLoop() {
-    void **tret;
+void TestHandlerAndLoop_1() {
+    printf("TestHandlerAndLoop_1-begin>>>>>>>>>>> %ld\n",t());
+    mCount = 10;
     NThread thread;
     TestHandler handler(thread.getLooper());
     while(mCount--) {
         Message* message = Message::obtain(mCount);
         handler.sendMessage(message);
     }
+    printf("TestHandlerAndLoop_1-begin wait %ld\n",t());
     mCondition1.wait(mLock1);
-
+    printf("TestHandlerAndLoop_1-END<<<<<<<<<<<<<< %ld\n",t());
 }
 
+void TestHandlerAndLoop_2() {
+    printf("TestHandlerAndLoop_2-begin>>>>>>>>>>>>%ld\n",t());
+    mCount = 10;
+    NThread thread;
+    TestHandler handler(thread.getLooper());
+    while(mCount--) {
+        Message* message = Message::obtain(mCount);
+        handler.sendMessageDelayed(message,mCount*500);
+    }
+    printf("TestHandlerAndLoop_2-begin wait %ld\n",t());
+    mCondition1.wait(mLock1);
+    printf("TestHandlerAndLoop_2-END <<<<<<<<<<<<< %ld\n",t());
+}
 void testLooper() {
-    TestHandlerAndLoop();
+    TestHandlerAndLoop_1();
+    TestHandlerAndLoop_2();
 
 }
 
@@ -66,11 +88,6 @@ Mutex mLock;
 Condition mCondition;
 int taskNum = 0;
 int taskindex = 0;
-long t(){
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return tv.tv_sec*1000 + tv.tv_usec/100;
-}
 class TestTask: public Task {
     public:
     void run() {

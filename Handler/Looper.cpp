@@ -41,7 +41,7 @@ void Looper::loop() {
 
 void Looper::enqueueMessage(Message* message) {
     if (mQuit == true) {
-        if(DEBUG) printf("Looper is quit stop enqueue message\n");
+        if(DEBUG) printf("tid:%d Looper is quit stop enqueue message\n", (unsigned)pthread_self());
         return;
     }
     if (mMessageQueue) {
@@ -51,12 +51,13 @@ void Looper::enqueueMessage(Message* message) {
 
 void Looper::quit(bool removeAllMessage) {
     if (mQuit == true) {
-        if(DEBUG) printf("Looper is quit stop quit\n");
+        if(DEBUG) printf("tid:%d Looper is quit stop quit\n", (unsigned)pthread_self());
         return;
     }
     mQuit = true;
     if (removeAllMessage) {
         mMessageQueue->removeAndDeleteAllMessage();
     }
+    mMessageQueue->setQuit(true);
     mMessageQueue->wake();
 }

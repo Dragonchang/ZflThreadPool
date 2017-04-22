@@ -30,6 +30,7 @@ public:
 
 
     bool isEmpty() {return mQueueSize == 0;}
+    void setQuit(bool quit) { mQuit = quit;}
     int pollOnce(int timeoutMillis); //主线程在messagequeue中等待消息事件时的睡眠函数
     void wake(); //消息发送到messageueue的wake函数
     void enqueueMessage(Message* message);
@@ -44,6 +45,7 @@ private:
     Message* mTail;
     Message* mCurrentMessage;
     int mQueueSize;
+    bool mQuit;
 #ifdef USE_PIPE
     int mWakeReadPipeFd;  // immutable
     int mWakeWritePipeFd; // immutable
